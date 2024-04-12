@@ -219,21 +219,26 @@ class ConfigDataEnvironment {
 	}
 
 	/**
-	 * Process all contributions and apply any newly imported property sources to the
-	 * {@link Environment}.
+	 * 将所有配置读取加载到{@link Environment}, 只要刷新环境, 回调 EnvironmentPostProcessor#postProcessEnvironment 方法
+	 * 就可以调用这个方法, springCloud 的自动配置刷新也是基于这个方法动态刷新
 	 */
 	void processAndApply() {
-		ConfigDataImporter importer = new ConfigDataImporter(this.logFactory, this.notFoundAction, this.resolvers,
-				this.loaders);
+		ConfigDataImporter importer = new ConfigDataImporter(
+				this.logFactory, this.notFoundAction, this.resolvers, this.loaders
+		);
 		registerBootstrapBinder(this.contributors, null, DENY_INACTIVE_BINDING);
 		ConfigDataEnvironmentContributors contributors = processInitial(this.contributors, importer);
 		ConfigDataActivationContext activationContext = createActivationContext(
-				contributors.getBinder(null, BinderOption.FAIL_ON_BIND_TO_INACTIVE_SOURCE));
+				contributors.getBinder(null, BinderOption.FAIL_ON_BIND_TO_INACTIVE_SOURCE)
+		);
 		contributors = processWithoutProfiles(contributors, importer, activationContext);
 		activationContext = withProfiles(contributors, activationContext);
 		contributors = processWithProfiles(contributors, importer, activationContext);
-		applyToEnvironment(contributors, activationContext, importer.getLoadedLocations(),
-				importer.getOptionalLocations());
+		applyToEnvironment(
+				contributors, activationContext,
+				importer.getLoadedLocations(),
+				importer.getOptionalLocations()
+		);
 	}
 
 	private ConfigDataEnvironmentContributors processInitial(ConfigDataEnvironmentContributors contributors,

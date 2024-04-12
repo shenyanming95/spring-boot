@@ -35,13 +35,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
 /**
- * {@link EnvironmentPostProcessor} that loads and applies {@link ConfigData} to Spring's
- * {@link Environment}.
- *
- * @author Phillip Webb
- * @author Madhura Bhave
- * @author Nguyen Bao Sach
- * @since 2.4.0
+ * 处理配置数据{@link ConfigData}, 将这些外部配置数据加载到spring环境中{@link Environment}.
  */
 public class ConfigDataEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
@@ -92,7 +86,9 @@ public class ConfigDataEnvironmentPostProcessor implements EnvironmentPostProces
 	void postProcessEnvironment(ConfigurableEnvironment environment, ResourceLoader resourceLoader,
 			Collection<String> additionalProfiles) {
 		this.logger.trace("Post-processing environment to add config data");
+		// 未指定 resourceLoader 就使用默认的 DefaultResourceLoader
 		resourceLoader = (resourceLoader != null) ? resourceLoader : new DefaultResourceLoader();
+		// 创建一个 ConfigDataEnvironment, 然后调用 processAndApply() 读取配置
 		getConfigDataEnvironment(environment, resourceLoader, additionalProfiles).processAndApply();
 	}
 
