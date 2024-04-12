@@ -265,14 +265,22 @@ public class SpringApplication {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
+		// 默认的 ResourceLoader 为null
 		this.resourceLoader = resourceLoader;
+		// 至少需要指定一个配置类, springBoot会把它们保存到一个LinkedHashSet中
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		// 根据当前系统引进的jar, 判断当前上下文是否需要一个内嵌的web服务器, 返回值是
+		// WebApplicationType, 它是一个枚举, 有3个类型：NONE、SERVLET、REACTIVE, 表示
+		// 的含义就是：非web环境、servlet 环境、响应式Webflux环境
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		// 获取上下文初始器ApplicationContextInitializer
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		// 获取上下文监听器ApplicationListener,
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		// 之前保存的配置类, 判断哪个类中带有main()方法, 则它就是启动类
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
@@ -298,23 +306,36 @@ public class SpringApplication {
 		long startTime = System.nanoTime();
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		ConfigurableApplicationContext context = null;
+		// 配置一些关于awt的设置, 可以省略
 		configureHeadlessProperty();
+		// 与创建容器阶段获取组件一样, 从spring.factories中加载 SpringApplicationRunListener
+		// 组件, 然后把它们放入到 SpringApplicationRunListeners (它保存了多个监听器)
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		// 回调监听器 SpringApplicationRunListener.starting() 方法,
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
+			// 封装命令行参数
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// 创建环境对象
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+			// banner打印
 			Banner printedBanner = printBanner(environment);
+			// 创建上下文, 根据当前系统引进的jar包判断该创建哪种上下文
 			context = createApplicationContext();
 			context.setApplicationStartup(this.applicationStartup);
+			// 准备上下文环境, 下一步就是刷新上下文
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
+			// 刷新上下文, 这步完成基本springBoot就可以使用了
 			refreshContext(context);
+			// afterRefresh()没有实现, 是springBoot给出的扩展方法, 在上下文刷新后处理相关逻辑
 			afterRefresh(context, applicationArguments);
 			Duration timeTakenToStartup = Duration.ofNanos(System.nanoTime() - startTime);
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);
 			}
+			// 回调SpringApplicationRunListener.started()方法, 逻辑与监听器回调一样
 			listeners.started(context, timeTakenToStartup);
+			// 回调 ApplicationRunner 和 CommandLineRunner
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
@@ -337,6 +358,7 @@ public class SpringApplication {
 			handleRunFailure(context, ex, null);
 			throw new IllegalStateException(ex);
 		}
+		// 到此springBoot启动完成, 容器就跑起来了
 		return context;
 	}
 
@@ -350,12 +372,16 @@ public class SpringApplication {
 			DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
 		// Create and configure the environment
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
+		// 配置上一步创建好的 ConfigurableEnvironment, 会加入main()方法携带的参数
+		// 配置一些ConversionService和PropertySource..
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		ConfigurationPropertySources.attach(environment);
+		// 回调监听器SpringApplicationRunListener.environmentPrepared()方法
 		listeners.environmentPrepared(bootstrapContext, environment);
 		DefaultPropertiesPropertySource.moveToEnd(environment);
 		Assert.state(!environment.containsProperty("spring.main.environment-prefix"),
 				"Environment prefix cannot be set via properties.");
+		// 将环境对象 ConfigurableEnvironment 绑定到 SpringApplication里面
 		bindToSpringApplication(environment);
 		if (!this.isCustomEnvironment) {
 			EnvironmentConverter environmentConverter = new EnvironmentConverter(getClassLoader());

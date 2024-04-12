@@ -99,6 +99,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		if (!isEnabled(annotationMetadata)) {
 			return NO_IMPORTS;
 		}
+		// 获取AutoConfigurationEntry，它就会去扫描各个自动配置类
 		AutoConfigurationEntry autoConfigurationEntry = getAutoConfigurationEntry(annotationMetadata);
 		return StringUtils.toStringArray(autoConfigurationEntry.getConfigurations());
 	}
@@ -123,6 +124,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 			return EMPTY_ENTRY;
 		}
 		AnnotationAttributes attributes = getAttributes(annotationMetadata);
+		// 加载全部的自动配置类
 		List<String> configurations = getCandidateConfigurations(annotationMetadata, attributes);
 		configurations = removeDuplicates(configurations);
 		Set<String> exclusions = getExclusions(annotationMetadata, attributes);
@@ -177,6 +179,8 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	 * @return a list of candidate configurations
 	 */
 	protected List<String> getCandidateConfigurations(AnnotationMetadata metadata, AnnotationAttributes attributes) {
+		// 实际就是依靠SpringFactoriesLoader去加载各个jar下META-INF/spring.factories
+		// 获取各个配置类的全类名，然后加载到IOC容器中
 		List<String> configurations = ImportCandidates.load(AutoConfiguration.class, getBeanClassLoader())
 			.getCandidates();
 		Assert.notEmpty(configurations,

@@ -79,6 +79,7 @@ import org.springframework.context.annotation.Import;
 @Documented
 @Inherited
 @AutoConfigurationPackage
+// 向容器注册组件
 @Import(AutoConfigurationImportSelector.class)
 public @interface EnableAutoConfiguration {
 
